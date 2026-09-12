@@ -143,23 +143,15 @@ struct PlanetGenerator {
 
     // MARK: - System / Galaxy generation
 
-    struct StarSystem {
-        var seed: String
-        var name: String
-        var planets: [Planet]
-        var starRadius: Double
-        var starColor: (r: Float, g: Float, b: Float)
-    }
-
     static func generateSystem(seed: String, planetCount: Int = 5) -> StarSystem {
         var rng = SeededRng(seed: hashStringSeed(seed + "-star"))
         let starRadius = rng.genRange(40000.0...80000.0)
-        let colors: [(r: Float, g: Float, b: Float)] = [
-            (1.0, 0.95, 0.8),   // yellow-white
-            (0.6, 0.7, 1.0),    // blue
-            (1.0, 0.6, 0.3),    // orange
-            (1.0, 0.4, 0.3),    // red dwarf
-            (0.9, 0.85, 1.0),   // white
+        let colors: [StarColor] = [
+            StarColor(r: 1.0, g: 0.95, b: 0.8),   // yellow-white
+            StarColor(r: 0.6, g: 0.7, b: 1.0),    // blue
+            StarColor(r: 1.0, g: 0.6, b: 0.3),    // orange
+            StarColor(r: 1.0, g: 0.4, b: 0.3),    // red dwarf
+            StarColor(r: 0.9, g: 0.85, b: 1.0),   // white
         ]
         let starColor = rng.pick(colors)
 
@@ -176,7 +168,8 @@ struct PlanetGenerator {
             name: systemName,
             planets: planets,
             starRadius: starRadius,
-            starColor: starColor
+            starColor: starColor,
+            position: StarPosition(x: 0, y: 0, z: 0)
         )
     }
 
@@ -186,9 +179,13 @@ struct PlanetGenerator {
         for i in 0..<systemCount {
             let systemSeed = "\(seed)-system-\(i)"
             var system = generateSystem(seed: systemSeed, planetCount: planetsPerSystem)
-            // Position in a spiral galaxy pattern
-            let angle = Double(i) * 2.399963  // golden angle
+            // Position in a spiral galaxy pattern using golden angle
+            let angle = Double(i) * 2.399963
             let radius = Double(i) * 15000.0 + rng.genRange(0.0...5000.0)
+            let x = cos(angle) * radius
+            let y = sin(angle) * radius
+            let z = rng.genRange(-2000.0...2000.0)
+            system.position = StarPosition(x: x, y: y, z: z)
             systems.append(system)
         }
         return systems

@@ -15,25 +15,38 @@ A macOS native 3D procedural planet explorer inspired by No Man's Sky. Generate 
 ## Requirements
 
 - macOS 13.0+
-- Swift 5.0+ (Xcode 15.0+ recommended)
+- Xcode 15.0+ or Swift 5.0+ (Command Line Tools)
 
 ## Building & Running
 
-### Option 1: Swift Package Manager (simplest)
+### Option 1: Xcode (recommended)
+
+The project generates automatically:
+
 ```bash
-swift run
+./build.sh
 ```
 
-### Option 2: Xcode
+Or manually:
+
 ```bash
 swift package generate-xcodeproj
 open PlanetExplorer.xcodeproj
 # Press Cmd+R
 ```
 
-### Option 3: Command Line with Xcode
+### Option 2: Command Line with Swift
+
 ```bash
-xcodebuild -scheme PlanetExplorer build
+swift run
+```
+
+> Note: `swift run` requires Swift to be able to load the SwiftUI macro plugins, which works on macOS 14+ with Xcode 15+.
+
+### Option 3: xcodebuild CLI
+
+```bash
+xcodebuild -project PlanetExplorer.xcodeproj -scheme PlanetExplorer build
 open build/Build/Products/Debug/PlanetExplorer.app
 ```
 
@@ -53,14 +66,23 @@ open build/Build/Products/Debug/PlanetExplorer.app
 
 ```
 PlanetExplorer/
-├── Package.swift                # Swift Package Manager config
+├── Package.swift                         # Swift Package Manager config
 ├── Sources/PlanetExplorer/
-│   ├── ContentView.swift        # Main app, navigation, state management
-│   ├── Models/Planet.swift      # Planet, Moon, Biome, PlanetType models
-│   ├── Generator/PlanetGenerator.swift  # Procedural generation (Rust-equivalent)
-│   ├── Scene/PlanetSceneView.swift      # SceneKit 3D renderer with fly camera
-│   └── Views/GalaxyMapView.swift        # 2D galaxy map, planet cards, info sidebar
-└── README.md
+│   ├── ContentView.swift                 # Main app, navigation, state
+│   ├── Info.plist                        # macOS app configuration
+│   ├── PlanetExplorer.entitlements       # App sandbox & code signing
+│   ├── Models/
+│   │   ├── Planet.swift                  # Planet, Moon, Biome, PlanetType
+│   │   └── StarSystem.swift              # StarSystem, StarColor, StarPosition
+│   ├── Generator/
+│   │   └── PlanetGenerator.swift         # Procedural generation (Rust-equivalent)
+│   ├── Scene/
+│   │   └── PlanetSceneView.swift         # SceneKit 3D renderer with fly camera
+│   └── Views/
+│       └── GalaxyMapView.swift           # 2D galaxy map, planet cards, sidebar
+├── PlanetExplorer.xcodeproj/             # Xcode project (auto-generated)
+├── README.md
+└── build.sh
 ```
 
 ## Algorithm
