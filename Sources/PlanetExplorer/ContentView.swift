@@ -17,6 +17,7 @@ final class AppState: ObservableObject {
     @Published var systemCount: Int = 25
     @Published var planetsPerSystem: Int = 5
     @Published var galaxyName: String = ""
+    @Published var showControls: Bool = false
 
     func generateGalaxy(seed: String, systemCount: Int = 25) {
         isGenerating = true
