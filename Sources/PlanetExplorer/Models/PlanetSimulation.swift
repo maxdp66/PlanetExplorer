@@ -298,9 +298,14 @@ struct MoonSimulation {
         return surfaceGravity / 9.807
     }
 
-    /// Orbital period from Kepler's 3rd law around the planet
+    /// Orbital period from Kepler's 3rd law: T = 2π√(a³/μ) where μ = G × M_planet
+    /// Calculated from physics, not stored — guarantees physical correctness
     var orbitalPeriodDays: Double {
-        return moon.orbit.periodDays
+        let G = 6.674e-11
+        let r = moon.orbit.semiMajorAxisAU * 1000  // km → m
+        let mu = G * planetSim.massKg
+        let periodSec = 2 * .pi * sqrt(pow(r, 3) / mu)
+        return periodSec / 86400.0
     }
 
     /// Orbital velocity around the planet (km/s)

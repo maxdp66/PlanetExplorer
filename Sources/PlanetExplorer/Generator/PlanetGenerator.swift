@@ -229,16 +229,57 @@ struct PlanetGenerator {
 
         let moonCount = rng.genRange(0..<5)
         var moons: [Moon] = []
+        var lastMoonOrbitKm: Double = 0
+
+        // Planet density for Kepler's 3rd law calculation (kg/m³)
+        let planetDensity: Double
+        switch type {
+        case .terrestrial: planetDensity = 5514
+        case .superEarth: planetDensity = 6500
+        case .gasGiant: planetDensity = 1326
+        case .iceGiant: planetDensity = 1638
+        case .hotJupiter: planetDensity = 800
+        }
+        let G = 6.674e-11
+        let planetRadiusM = radius * 1000
+        let planetMassKg = planetDensity * (4.0/3.0) * .pi * pow(planetRadiusM, 3)
+
         for m in 0..<moonCount {
-            let moonRadius = rng.genRange(200.0...3000.0)
+            let moonRadiusKm = rng.genRange(200.0...3000.0)
             let moonBiome: Biome = rng.genBool(0.5) ? .ice : .barren
-            // Moon orbital distance: 5,000-50,000 km from planet (realistic range)
-            let moonOrbitKm = rng.genRange(5000.0...50000.0)
-            let moonPeriod = rng.genRange(1.0...30.0) // days
+
+            // Roche limit: minimum distance before tidal forces tear moon apart
+            // d = 2.44 * R_planet * (ρ_planet/ρ_moon)^(1/3)
+            let moonDensity: Double = moonBiome == .ice ? 1500 : 2500
+            let rocheLimitKm = 2.44 * radius * pow(planetDensity / moonDensity, 1.0/3.0)
+
+            // Minimum orbital separation: 20% of previous orbit or 3000 km
+            // This prevents moons from being placed at the same distance
+            let minSeparation = max(lastMoonOrbitKm * 0.20, 3000.0)
+            let minOrbitKm = max(rocheLimitKm + 500, lastMoonOrbitKm + minSeparation)
+            let maxOrbitKm = 50000.0
+
+            guard minOrbitKm < maxOrbitKm else { continue }
+
+            let moonOrbitKm = rng.genRange(minOrbitKm...max(minOrbitKm + 1000, maxOrbitKm))
+            lastMoonOrbitKm = moonOrbitKm
+
+            // Kepler's 3rd law: T = 2π√(a³/μ) where μ = G × M_planet
+            // This ensures orbital period is physically determined, not random
+            let a = moonOrbitKm * 1000  // km → m
+            let mu = G * planetMassKg
+            let periodSec = 2 * .pi * sqrt(pow(a, 3) / mu)
+            let moonPeriodDays = periodSec / 86400.0
+
             moons.append(Moon(
-                radiusKm: moonRadius,
+                radiusKm: moonRadiusKm,
                 biome: moonBiome,
-                orbit: OrbitInfo(semiMajorAxisAU: moonOrbitKm, eccentricity: rng.genRange(0.0...0.3), inclination: rng.genRange(0.0...15.0), periodDays: moonPeriod)
+                orbit: OrbitInfo(
+                    semiMajorAxisAU: moonOrbitKm,
+                    eccentricity: rng.genRange(0.0...0.3),
+                    inclination: rng.genRange(0.0...15.0),
+                    periodDays: moonPeriodDays
+                )
             ))
         }
 
