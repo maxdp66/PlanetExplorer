@@ -9,6 +9,8 @@ class PlanetScene: SCNView {
     private var starField: SCNNode?
     private var moonsNode: SCNNode?
 
+    var arcadeMode: Bool = false
+
     // Camera state
     private var cameraDistance: Float = 30.0
     private var cameraYaw: Float = 0.0
@@ -144,19 +146,20 @@ class PlanetScene: SCNView {
         planetSCN.geometry?.materials = [material]
         planetSCN.position = SCNVector3(0, 0, 0)
 
-        // Procedural rotation period based on planet type
-        // Gas giants rotate faster (10-20h), terrestrial slower (24-1000h)
-        let rotationHours: Double
-        switch planet.type {
-        case .gasGiant: rotationHours = Double.random(in: 10...20)
-        case .hotJupiter: rotationHours = Double.random(in: 15...30)
-        case .iceGiant: rotationHours = Double.random(in: 15...25)
-        case .terrestrial: rotationHours = Double.random(in: 20...100)
-        case .superEarth: rotationHours = Double.random(in: 15...50)
-        }
-        let rotationDuration = rotationHours * 0.5  // scale: 1 hour = 0.5 seconds
+        // Calculate planet rotation period from physics
+        // Using breakup angular velocity: P_min = sqrt(3π / (G × ρ))
+        let G = 6.674e-11
+        let density = PlanetSimulation(planet: planet, star: .gType).density  // kg/m³
+        let breakupPeriodSec = sqrt(3 * .pi / (G * density))
+        let breakupPeriodHours = breakupPeriodSec / 3600
+        // Real planets rotate well below breakup speed (factor of 2-10)
+        let rotationFactor = Double.random(in: 2.5...8.0)
+        let rotationHours = breakupPeriodHours * rotationFactor
+        
+        // Arcade mode: speed up 10x for visual effect
+        let rotationDuration = arcadeMode ? rotationHours * 0.05 : rotationHours * 0.5
 
-        let rotate = SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: rotationDuration)
+        let rotate = SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: max(rotationDuration, 0.5))
         let repeatRotate = SCNAction.repeatForever(rotate)
         planetSCN.runAction(repeatRotate)
 
@@ -180,8 +183,9 @@ class PlanetScene: SCNView {
             // Use the moon's actual orbital period from generation
             let orbitalPeriodDays = moon.orbit.periodDays
             
-            // Scale period for visualization: 1 day = 0.5 seconds, clamped for visibility
-            let vizDuration = max(min(orbitalPeriodDays * 0.5, 30.0), 2.0)
+            // Arcade mode: speed up 10x for visual effect
+            let timeScale: Double = arcadeMode ? 0.05 : 0.5
+            let vizDuration = max(min(orbitalPeriodDays * timeScale, 30.0), 2.0)
 
             // Orbit radius: scale with moon's actual distance (log scale for visibility)
             let orbitRadius = Float(2.0 + log10(moon.orbit.semiMajorAxisAU / 1000.0 + 1) * 2.5)
@@ -329,13 +333,16 @@ class PlanetScene: SCNView {
 /// SwiftUI wrapper for the SceneKit planet view
 struct PlanetSceneView: NSViewRepresentable {
     let planet: Planet?
+    var arcadeMode: Bool = false
 
     func makeNSView(context: Context) -> PlanetScene {
         let scene = PlanetScene(frame: .zero)
+        scene.arcadeMode = arcadeMode
         return scene
     }
 
     func updateNSView(_ nsView: PlanetScene, context: Context) {
+        nsView.arcadeMode = arcadeMode
         if let planet = planet {
             nsView.displayPlanet(planet)
         }

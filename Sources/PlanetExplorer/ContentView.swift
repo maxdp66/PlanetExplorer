@@ -19,6 +19,7 @@ final class AppState: ObservableObject {
     @Published var galaxyName: String = ""
     @Published var showControls: Bool = false
     @Published var showSystemMap: Bool = false
+    @Published var arcadeMode: Bool = false
 
     func generateGalaxy(seed: String, systemCount: Int = 25) {
         isGenerating = true
@@ -192,6 +193,13 @@ struct ContentView: View {
                         .buttonStyle(.bordered)
                         .font(.caption)
 
+                        Button(appState.arcadeMode ? "Arcade: ON" : "Arcade: OFF") {
+                            appState.arcadeMode.toggle()
+                        }
+                        .buttonStyle(.bordered)
+                        .foregroundColor(appState.arcadeMode ? .yellow : .gray)
+                        .font(.caption)
+
                         if appState.selectedPlanetIndex != nil {
                             Button("Galaxy Map") {
                                 appState.selectedPlanetIndex = nil
@@ -247,7 +255,7 @@ struct ContentView: View {
         HStack(spacing: 0) {
             ZStack {
                 Color.black
-                PlanetSceneView(planet: appState.currentPlanet)
+                PlanetSceneView(planet: appState.currentPlanet, arcadeMode: appState.arcadeMode)
             }
             .frame(maxWidth: .infinity)
 
