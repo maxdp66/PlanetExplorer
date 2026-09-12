@@ -1,5 +1,74 @@
+# Build products
 build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Xcode
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/xcuserdata/*.xcuserstate
+*.xcworkspace
+xcuserdata/
+*.moved-assemble
+*.perspectivev3
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.xccheckout
+*.xcscmblueprint
+
+# Swift Package Manager
+.build/
+Packages/
+Package.pins
+Package.resolved
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Thumbnails
+Thumbs.db
+ehthumbs.db
+
+# Editor files
 *.swp
+*.swo
+*~
 *.orig
-PlanetExplorer.xcodeproj/xcuserdata/
+*.bak
+
+# IDE
+.idea/
+.vscode/
+*.tmproj
+*.tmproject
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# OS generated
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# User-specific Xcode files
+*.xcuserstate
