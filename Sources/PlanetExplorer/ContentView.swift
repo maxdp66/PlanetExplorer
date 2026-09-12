@@ -167,6 +167,15 @@ struct ContentView: View {
                         }
                         Spacer()
 
+                        VStack(alignment: .trailing, spacing: 2) {
+                            if !appState.galaxyName.isEmpty {
+                                Text(appState.galaxyName)
+                                    .font(.caption)
+                                    .foregroundColor(.cyan)
+                            }
+                        }
+                        Spacer()
+
                         Button(action: { appState.showControls.toggle() }) {
                             Image(systemName: "questionmark.circle")
                         }
@@ -268,8 +277,14 @@ struct ContentView: View {
                 .padding()
                 .background(Color.gray.opacity(0.1))
 
+                let currentStarType: StarType? = {
+                    guard let sysIdx = appState.selectedSystemIndex,
+                          sysIdx < appState.galaxy.count else { return nil }
+                    return appState.galaxy[sysIdx].starType
+                }()
+
                 ScrollView {
-                    PlanetInfoView(planet: appState.currentPlanet)
+                    PlanetInfoView(planet: appState.currentPlanet, starType: currentStarType)
                 }
             }
             .frame(width: 280)

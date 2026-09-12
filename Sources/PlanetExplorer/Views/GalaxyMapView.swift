@@ -145,9 +145,12 @@ struct GalaxyMapView: View {
 
 struct PlanetInfoView: View {
     let planet: Planet?
+    let starType: StarType?
+    @StateObject private var clock = Clock()
 
     var body: some View {
         if let planet = planet {
+            let sim = PlanetSimulation(planet: planet, star: starType ?? .gType)
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -155,7 +158,6 @@ struct PlanetInfoView: View {
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
-
                         Text(planet.type.name)
                             .font(.subheadline)
                             .foregroundColor(.gray)
@@ -163,26 +165,62 @@ struct PlanetInfoView: View {
 
                     Divider().background(Color.gray)
 
+                    // Live orbital data
                     Group {
-                        InfoRow(label: "Radius", value: planet.formattedRadius)
-                        InfoRow(label: "Moons", value: planet.moonCount)
+                        Text("Orbital Data")
+                            .font(.headline)
+                            .foregroundColor(.cyan)
+                        InfoRow(label: "Distance from star", value: sim.formattedOrbitalDistance)
+                        InfoRow(label: "Orbital velocity", value: sim.formattedVelocity)
+                        InfoRow(label: "Orbital period", value: String(format: "%.2f days", sim.orbitalPeriodDays))
+                        InfoRow(label: "Eccentricity", value: String(format: "%.4f", sim.eccentricity))
+                    }
 
-                        if let biome = planet.biome {
-                            InfoRow(label: "Biome", value: biome.name)
-                        }
+                    Divider().background(Color.gray)
 
-                        HStack {
-                            Text("Flora:")
-                                .foregroundColor(.gray)
-                            Image(systemName: planet.hasFlora ? "leaf.fill" : "xmark.circle")
-                                .foregroundColor(planet.hasFlora ? .green : .red)
-                        }
+                    // Live physical data
+                    Group {
+                        Text("Physical Properties")
+                            .font(.headline)
+                            .foregroundColor(.orange)
+                        InfoRow(label: "Mass", value: sim.formattedMass)
+                        InfoRow(label: "Surface gravity", value: sim.formattedGravity)
+                        InfoRow(label: "Escape velocity", value: String(format: "%.2f km/s", sim.escapeVelocityKms))
+                        InfoRow(label: "Surface area", value: sim.formattedSurfaceArea)
+                    }
 
-                        HStack {
-                            Text("Fauna:")
-                                .foregroundColor(.gray)
-                            Image(systemName: planet.hasFauna ? "pawprint.fill" : "xmark.circle")
-                                .foregroundColor(planet.hasFauna ? .green : .red)
+                    Divider().background(Color.gray)
+
+                    // Live environment data
+                    Group {
+                        Text("Environment")
+                            .font(.headline)
+                            .foregroundColor(.green)
+                        InfoRow(label: "Surface temp", value: sim.formattedSurfaceTemp)
+                        InfoRow(label: "Solar flux", value: String(format: "%.2f Earth flux", sim.solarFluxEarth))
+                        InfoRow(label: "Habitability", value: sim.habitability)
+                        InfoRow(label: "Liquid water", value: sim.liquidWaterPossible ? "Possible" : "No")
+                    }
+
+                    if let biome = planet.biome {
+                        Divider().background(Color.gray)
+                        Group {
+                            Text("Biome")
+                                .font(.headline)
+                                .foregroundColor(.purple)
+                            InfoRow(label: "Type", value: biome.name)
+                            HStack {
+                                Text("Flora:")
+                                    .foregroundColor(.gray)
+                                Image(systemName: planet.hasFlora ? "leaf.fill" : "xmark.circle")
+                                    .foregroundColor(planet.hasFlora ? .green : .red)
+                            }
+                            HStack {
+                                Text("Fauna:")
+                                    .foregroundColor(.gray)
+                                Image(systemName: planet.hasFauna ? "pawprint.fill" : "xmark.circle")
+                                    .foregroundColor(planet.hasFauna ? .green : .red)
+                            }
                         }
                     }
 
@@ -195,6 +233,7 @@ struct PlanetInfoView: View {
 
                         ForEach(0..<planet.moons.count, id: \.self) { i in
                             let moon = planet.moons[i]
+                            let moonSim = sim.moonSimulation(moon)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Moon \(i + 1)")
                                     .font(.subheadline)
@@ -204,6 +243,14 @@ struct PlanetInfoView: View {
                                         .font(.caption)
                                     Spacer()
                                     Text(String(format: "%.0f km", moon.radiusKm))
+                                        .font(.caption)
+                                }
+                                .foregroundColor(.gray)
+                                HStack {
+                                    Text("Distance: \(moonSim.formattedDistance)")
+                                        .font(.caption)
+                                    Spacer()
+                                    Text("v: \(moonSim.formattedVelocity)")
                                         .font(.caption)
                                 }
                                 .foregroundColor(.gray)
@@ -243,6 +290,19 @@ struct InfoRow: View {
             Text(value)
                 .foregroundColor(.white)
                 .fontWeight(.medium)
+        }
+    }
+}
+
+/// Ticks every second to force UI refresh for "live" data display.
+final class Clock: ObservableObject {
+    @Published var now: Date = Date()
+
+    init() {
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.now = Date()
+            }
         }
     }
 }
