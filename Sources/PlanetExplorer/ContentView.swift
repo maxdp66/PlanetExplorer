@@ -18,6 +18,7 @@ final class AppState: ObservableObject {
     @Published var planetsPerSystem: Int = 5
     @Published var galaxyName: String = ""
     @Published var showControls: Bool = false
+    @Published var showSystemMap: Bool = false
 
     func generateGalaxy(seed: String, systemCount: Int = 25) {
         isGenerating = true
@@ -170,6 +171,12 @@ struct ContentView: View {
                             Image(systemName: "questionmark.circle")
                         }
 
+                        Button(appState.showSystemMap ? "Planet List" : "System Map") {
+                            appState.showSystemMap.toggle()
+                        }
+                        .buttonStyle(.bordered)
+                        .font(.caption)
+
                         if appState.selectedPlanetIndex != nil {
                             Button("Galaxy Map") {
                                 appState.selectedPlanetIndex = nil
@@ -182,6 +189,8 @@ struct ContentView: View {
 
                     if appState.currentPlanet != nil {
                         planetView
+                    } else if appState.showSystemMap {
+                        SystemMapView(system: system)
                     } else {
                         systemOverview
                     }
@@ -269,7 +278,22 @@ struct ContentView: View {
     }
 
     private var systemOverview: some View {
-        SystemMapView(system: appState.galaxy[appState.selectedSystemIndex!])
+        ScrollView {
+            LazyVGrid(columns: [
+                GridItem(.adaptive(minimum: 200, maximum: 300))
+            ], spacing: 16) {
+                ForEach(0..<appState.galaxy[appState.selectedSystemIndex!].planets.count, id: \.self) { i in
+                    let planet = appState.galaxy[appState.selectedSystemIndex!].planets[i]
+                    Button(action: {
+                        appState.selectPlanet(i)
+                    }) {
+                        PlanetCardView(planet: planet, index: i)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding()
+        }
     }
 }
 
