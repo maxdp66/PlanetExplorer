@@ -52,7 +52,7 @@ struct PlanetGenerator {
         mutating func genRange(_ range: Range<Int>) -> Int {
             let count = range.count
             if count <= 0 { return range.lowerBound }
-            let val = Int(truncatingIfNeeded: next()) % count
+            let val = Int(next() % UInt64(count))
             return range.lowerBound + val
         }
 
