@@ -6,6 +6,17 @@ struct SystemMapView: View {
     let system: StarSystem
     @ObservedObject private var hoverState = HoverState()
 
+    private var starRadius: CGFloat {
+        // Log scale for star display: 20-60 pt
+        let r = system.starType.radiusKm
+        return CGFloat(20 + log10(r / 1000.0 + 1) * 15)
+    }
+
+    private var starColor: Color {
+        let c = system.starType.color
+        return Color(red: Double(c.r), green: Double(c.g), blue: Double(c.b))
+    }
+
     var body: some View {
         GeometryReader { geo in
             let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
@@ -59,47 +70,40 @@ struct SystemMapView: View {
                         Circle()
                             .fill(RadialGradient(
                                 colors: [
-                                    Color(red: Double(system.starColor.r), green: Double(system.starColor.g), blue: Double(system.starColor.b)).opacity(0.4),
+                                    starColor.opacity(0.4),
                                     Color.clear
                                 ],
                                 center: .center,
-                                startRadius: 20,
-                                endRadius: 50
+                                startRadius: starRadius * 0.5,
+                                endRadius: starRadius * 1.5
                             ))
-                            .frame(width: 100, height: 100)
+                            .frame(width: starRadius * 3, height: starRadius * 3)
 
                         Circle()
                             .fill(RadialGradient(
                                 colors: [
-                                    Color(
-                                        red: Double(system.starColor.r),
-                                        green: Double(system.starColor.g),
-                                        blue: Double(system.starColor.b)
-                                    ).opacity(0.9),
-                                    Color(
-                                        red: Double(system.starColor.r) * 0.6,
-                                        green: Double(system.starColor.g) * 0.6,
-                                        blue: Double(system.starColor.b) * 0.6
-                                    )
+                                    starColor.opacity(0.9),
+                                    starColor.opacity(0.5)
                                 ],
                                 center: .init(x: 0.35, y: 0.35),
-                                startRadius: 5,
-                                endRadius: 30
+                                startRadius: starRadius * 0.1,
+                                endRadius: starRadius
                             ))
-                            .frame(width: 40, height: 40)
-                            .shadow(color: Color(
-                                red: Double(system.starColor.r),
-                                green: Double(system.starColor.g),
-                                blue: Double(system.starColor.b)
-                            ), radius: 15)
+                            .frame(width: starRadius * 2, height: starRadius * 2)
+                            .shadow(color: starColor, radius: starRadius * 0.8)
                     }
                     .position(center)
 
                     // Star label
-                    Text(system.name)
-                        .font(.system(size: 10, weight: .semibold, design: .serif))
-                        .foregroundColor(.white.opacity(0.7))
-                        .position(x: center.x, y: center.y + 35)
+                    VStack(spacing: 1) {
+                        Text(system.name)
+                            .font(.system(size: 10, weight: .semibold, design: .serif))
+                            .foregroundColor(.white.opacity(0.8))
+                        Text(system.starType.spectralClass + " class • " + String(system.starType.temperatureK) + "K")
+                            .font(.system(size: 7, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.4))
+                    }
+                    .position(x: center.x, y: center.y + starRadius + 18)
 
                     // Planets
                     ForEach(0..<system.planets.count, id: \.self) { i in
@@ -189,6 +193,9 @@ struct PlanetOrbitalView: View {
                     Text(planet.formattedRadius)
                         .font(.system(size: 7))
                         .foregroundColor(.gray)
+                    Text(planet.orbit.description)
+                        .font(.system(size: 7, design: .monospaced))
+                        .foregroundColor(.yellow.opacity(0.8))
                     if let biome = planet.biome {
                         Text(biome.name)
                             .font(.system(size: 7))

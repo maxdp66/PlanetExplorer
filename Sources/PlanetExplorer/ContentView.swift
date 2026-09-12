@@ -16,21 +16,21 @@ final class AppState: ObservableObject {
     @Published var seedInput: String = "default"
     @Published var systemCount: Int = 25
     @Published var planetsPerSystem: Int = 5
-    @Published var showControls: Bool = false
+    @Published var galaxyName: String = ""
 
-    func generateGalaxy(seed: String, systemCount: Int = 25, planetsPerSystem: Int = 5) {
+    func generateGalaxy(seed: String, systemCount: Int = 25) {
         isGenerating = true
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let systems = PlanetGenerator.generateGalaxy(
+            let galaxy = PlanetGenerator.generateGalaxy(
                 seed: seed,
-                systemCount: systemCount,
-                planetsPerSystem: planetsPerSystem
+                systemCount: systemCount
             )
             DispatchQueue.main.async {
-                self?.galaxy = systems
+                self?.galaxy = galaxy.systems
+                self?.galaxyName = galaxy.name
                 self?.selectedSystemIndex = 0
                 self?.selectedPlanetIndex = 0
-                if let system = systems.first, let planet = system.planets.first {
+                if let system = galaxy.systems.first, let planet = system.planets.first {
                     self?.currentPlanet = planet
                 }
                 self?.isGenerating = false
@@ -98,17 +98,10 @@ struct ContentView: View {
                 ), in: 5...100)
                 .font(.caption)
 
-                Stepper("Planets/System: \(appState.planetsPerSystem)", value: Binding(
-                    get: { appState.planetsPerSystem },
-                    set: { appState.planetsPerSystem = $0 }
-                ), in: 1...10)
-                .font(.caption)
-
                 Button("Generate Galaxy") {
                     appState.generateGalaxy(
                         seed: appState.seedInput,
-                        systemCount: appState.systemCount,
-                        planetsPerSystem: appState.planetsPerSystem
+                        systemCount: appState.systemCount
                     )
                 }
                 .buttonStyle(.borderedProminent)
@@ -166,7 +159,7 @@ struct ContentView: View {
                             Text(system.name)
                                 .font(.title2)
                                 .fontWeight(.bold)
-                            Text("\(system.planets.count) planets")
+                            Text("\(system.starType.description) • \(system.planets.count) planets")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                         }
@@ -290,9 +283,9 @@ struct SystemRowView: View {
             HStack {
                 Circle()
                     .fill(Color(
-                        red: Double(system.starColor.r),
-                        green: Double(system.starColor.g),
-                        blue: Double(system.starColor.b)
+                        red: Double(system.starType.color.r),
+                        green: Double(system.starType.color.g),
+                        blue: Double(system.starType.color.b)
                     ))
                     .frame(width: 12, height: 12)
                 Text(system.name)

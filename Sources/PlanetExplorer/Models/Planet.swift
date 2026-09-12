@@ -20,11 +20,11 @@ enum PlanetType: Int, CaseIterable, Codable {
 
     var color: (r: Float, g: Float, b: Float, a: Float) {
         switch self {
-        case .terrestrial: return (0.2, 0.55, 0.13, 1.0)    // green
-        case .gasGiant: return (0.8, 0.6, 0.2, 1.0)         // orange
-        case .iceGiant: return (0.4, 0.6, 0.9, 1.0)         // blue
-        case .superEarth: return (0.5, 0.3, 0.7, 1.0)       // purple
-        case .hotJupiter: return (0.9, 0.3, 0.2, 1.0)       // red
+        case .terrestrial: return (0.2, 0.55, 0.13, 1.0)
+        case .gasGiant: return (0.8, 0.6, 0.2, 1.0)
+        case .iceGiant: return (0.4, 0.6, 0.9, 1.0)
+        case .superEarth: return (0.5, 0.3, 0.7, 1.0)
+        case .hotJupiter: return (0.9, 0.3, 0.2, 1.0)
         }
     }
 
@@ -60,12 +60,12 @@ enum Biome: Int, CaseIterable, Codable {
 
     var color: (r: Float, g: Float, b: Float, a: Float) {
         switch self {
-        case .toxic: return (0.6, 0.2, 0.6, 1.0)    // purple
-        case .tropical: return (0.2, 0.7, 0.2, 1.0)  // green
-        case .arid: return (0.7, 0.5, 0.2, 1.0)      // tan
-        case .desert: return (0.8, 0.7, 0.3, 1.0)    // yellow
-        case .ice: return (0.7, 0.85, 0.95, 1.0)     // light blue
-        case .barren: return (0.5, 0.5, 0.5, 1.0)    // grey
+        case .toxic: return (0.6, 0.2, 0.6, 1.0)
+        case .tropical: return (0.2, 0.7, 0.2, 1.0)
+        case .arid: return (0.7, 0.5, 0.2, 1.0)
+        case .desert: return (0.8, 0.7, 0.3, 1.0)
+        case .ice: return (0.7, 0.85, 0.95, 1.0)
+        case .barren: return (0.5, 0.5, 0.5, 1.0)
         }
     }
 }
@@ -73,10 +73,12 @@ enum Biome: Int, CaseIterable, Codable {
 struct Moon: Codable {
     var radiusKm: Double
     var biome: Biome
+    var orbit: OrbitInfo
 
-    init(radiusKm: Double, biome: Biome) {
+    init(radiusKm: Double, biome: Biome, orbit: OrbitInfo) {
         self.radiusKm = radiusKm
         self.biome = biome
+        self.orbit = orbit
     }
 }
 
@@ -89,8 +91,9 @@ struct Planet: Codable, Identifiable {
     var hasFauna: Bool
     var moons: [Moon]
     var name: String
+    var orbit: OrbitInfo
 
-    init(type: PlanetType, radiusKm: Double, biome: Biome?, hasFlora: Bool, hasFauna: Bool, moons: [Moon], name: String) {
+    init(type: PlanetType, radiusKm: Double, biome: Biome?, hasFlora: Bool, hasFauna: Bool, moons: [Moon], name: String, orbit: OrbitInfo) {
         self.id = UUID()
         self.type = type
         self.radiusKm = radiusKm
@@ -99,6 +102,7 @@ struct Planet: Codable, Identifiable {
         self.hasFauna = hasFauna
         self.moons = moons
         self.name = name
+        self.orbit = orbit
     }
 
     var formattedRadius: String {

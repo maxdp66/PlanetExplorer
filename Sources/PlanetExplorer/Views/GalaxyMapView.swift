@@ -78,16 +78,16 @@ struct GalaxyMapView: View {
                                 // Star dot
                                 Circle()
                                     .fill(Color(
-                                        red: Double(system.starColor.r),
-                                        green: Double(system.starColor.g),
-                                        blue: Double(system.starColor.b)
+                                        red: Double(system.starType.color.r),
+                                        green: Double(system.starType.color.g),
+                                        blue: Double(system.starType.color.b)
                                     ))
                                     .frame(width: isSelected ? 14 : 10, height: isSelected ? 14 : 10)
                                     .position(pos)
                                     .shadow(color: Color(
-                                        red: Double(system.starColor.r),
-                                        green: Double(system.starColor.g),
-                                        blue: Double(system.starColor.b)
+                                        red: Double(system.starType.color.r),
+                                        green: Double(system.starType.color.g),
+                                        blue: Double(system.starType.color.b)
                                     ), radius: isSelected ? 6 : 2)
 
                                 // System name label
