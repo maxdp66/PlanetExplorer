@@ -3,14 +3,15 @@ import PackageDescription
 
 let package = Package(
     name: "PlanetExplorer",
-    platforms: [.macOS(.v13)],
+    platforms: [.macOS(.v14)],
     products: [
         .executable(name: "PlanetExplorer", targets: ["PlanetExplorer"])
     ],
     targets: [
         .executableTarget(
             name: "PlanetExplorer",
-            path: "Sources/PlanetExplorer"
+            path: "Sources/PlanetExplorer",
+            exclude: ["Info.plist", "PlanetExplorer.entitlements"]
         )
     ]
 )

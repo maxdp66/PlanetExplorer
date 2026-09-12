@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 // MARK: - Main App Entry Point
 
@@ -9,14 +10,12 @@ struct PlanetExplorerApp: App {
             ContentView()
                 .preferredColorScheme(.dark)
         }
-        .windowStyle(.titleBar)
-        .windowResizability(.contentSize)
     }
 }
 
 // MARK: - App State
 
-class AppState: ObservableObject {
+final class AppState: ObservableObject {
     @Published var galaxy: [StarSystem] = []
     @Published var selectedSystemIndex: Int? = nil
     @Published var selectedPlanetIndex: Int? = nil
@@ -24,22 +23,28 @@ class AppState: ObservableObject {
     @Published var seed: String = "default"
     @Published var isGenerating = false
 
+    // View-local state moved here to avoid @State (SwiftUIMacros)
+    @Published var seedInput: String = "default"
+    @Published var systemCount: Int = 25
+    @Published var planetsPerSystem: Int = 5
+    @Published var showControls: Bool = false
+
     func generateGalaxy(seed: String, systemCount: Int = 25, planetsPerSystem: Int = 5) {
         isGenerating = true
-        DispatchQueue.global(qos: .userInitiated).async {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let systems = PlanetGenerator.generateGalaxy(
                 seed: seed,
                 systemCount: systemCount,
                 planetsPerSystem: planetsPerSystem
             )
             DispatchQueue.main.async {
-                self.galaxy = systems
-                self.selectedSystemIndex = 0
-                self.selectedPlanetIndex = 0
+                self?.galaxy = systems
+                self?.selectedSystemIndex = 0
+                self?.selectedPlanetIndex = 0
                 if let system = systems.first, let planet = system.planets.first {
-                    self.currentPlanet = planet
+                    self?.currentPlanet = planet
                 }
-                self.isGenerating = false
+                self?.isGenerating = false
             }
         }
     }
@@ -62,18 +67,13 @@ class AppState: ObservableObject {
 // MARK: - Main Content View
 
 struct ContentView: View {
-    @StateObject private var appState = AppState()
-    @State private var seedInput: String = "default"
-    @State private var systemCount: Int = 25
-    @State private var planetsPerSystem: Int = 5
-    @State private var showControls = false
+    @ObservedObject private var appState = AppState()
 
     var body: some View {
         NavigationSplitView {
             sidebar
                 .frame(minWidth: 280, maxWidth: 340)
                 .background(Color.black)
-
         } detail: {
             detailContent
         }
@@ -82,20 +82,12 @@ struct ContentView: View {
                 appState.generateGalaxy(seed: "default")
             }
         }
-        .toolbar {
-            ToolbarItem(placement: .navigation) {
-                Button(action: toggleSidebar) {
-                    Image(systemName: "sidebar.left")
-                }
-            }
-        }
     }
 
     // MARK: - Sidebar
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            // Seed input area
             VStack(spacing: 10) {
                 HStack {
                     Text("Galaxy Seed:")
@@ -104,24 +96,30 @@ struct ContentView: View {
                     Spacer()
                 }
 
-                TextField("Enter seed text...", text: $seedInput)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(height: 24)
+                TextField("Enter seed text...", text: Binding(
+                    get: { appState.seedInput },
+                    set: { appState.seedInput = $0 }
+                ))
+                .textFieldStyle(.roundedBorder)
+                .frame(height: 24)
 
-                HStack {
-                    Stepper("Systems: \(systemCount)", value: $systemCount, in: 5...100)
-                        .font(.caption)
-                }
-                HStack {
-                    Stepper("Planets/System: \(planetsPerSystem)", value: $planetsPerSystem, in: 1...10)
-                        .font(.caption)
-                }
+                Stepper("Systems: \(appState.systemCount)", value: Binding(
+                    get: { appState.systemCount },
+                    set: { appState.systemCount = $0 }
+                ), in: 5...100)
+                .font(.caption)
+
+                Stepper("Planets/System: \(appState.planetsPerSystem)", value: Binding(
+                    get: { appState.planetsPerSystem },
+                    set: { appState.planetsPerSystem = $0 }
+                ), in: 1...10)
+                .font(.caption)
 
                 Button("Generate Galaxy") {
                     appState.generateGalaxy(
-                        seed: seedInput,
-                        systemCount: systemCount,
-                        planetsPerSystem: planetsPerSystem
+                        seed: appState.seedInput,
+                        systemCount: appState.systemCount,
+                        planetsPerSystem: appState.planetsPerSystem
                     )
                 }
                 .buttonStyle(.borderedProminent)
@@ -130,13 +128,11 @@ struct ContentView: View {
             .padding()
             .background(Color.gray.opacity(0.1))
 
-            // Progress indicator
             if appState.isGenerating {
                 ProgressView("Generating galaxy...")
                     .padding()
             }
 
-            // System list
             List {
                 ForEach(0..<appState.galaxy.count, id: \.self) { i in
                     let system = appState.galaxy[i]
@@ -170,7 +166,6 @@ struct ContentView: View {
                 let system = appState.galaxy[sysIdx]
 
                 VStack(spacing: 0) {
-                    // Top bar with system info
                     HStack {
                         VStack(alignment: .leading) {
                             Text(system.name)
@@ -182,7 +177,7 @@ struct ContentView: View {
                         }
                         Spacer()
 
-                        Button(action: { showControls.toggle() }) {
+                        Button(action: { appState.showControls.toggle() }) {
                             Image(systemName: "questionmark.circle")
                         }
 
@@ -206,8 +201,7 @@ struct ContentView: View {
                 welcomeScreen
             }
 
-            // Controls overlay
-            if showControls {
+            if appState.showControls {
                 VStack {
                     Spacer()
                     HStack {
@@ -217,13 +211,11 @@ struct ContentView: View {
                     Spacer()
                 }
                 .onTapGesture {
-                    showControls = false
+                    appState.showControls = false
                 }
             }
         }
     }
-
-    // MARK: - Welcome Screen
 
     private var welcomeScreen: some View {
         VStack(spacing: 16) {
@@ -238,20 +230,15 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Planet View Mode
-
     private var planetView: some View {
         HStack(spacing: 0) {
-            // 3D Scene
             ZStack {
                 Color.black
                 PlanetSceneView(planet: appState.currentPlanet)
             }
             .frame(maxWidth: .infinity)
 
-            // Planet info sidebar
             VStack(spacing: 0) {
-                // Navigation
                 HStack {
                     Button("◀ Previous") {
                         guard let pIdx = appState.selectedPlanetIndex, pIdx > 0 else { return }
@@ -277,7 +264,6 @@ struct ContentView: View {
                 .padding()
                 .background(Color.gray.opacity(0.1))
 
-                // Info panel
                 ScrollView {
                     PlanetInfoView(planet: appState.currentPlanet)
                 }
@@ -293,31 +279,23 @@ struct ContentView: View {
         return appState.galaxy[sysIdx].planets.count
     }
 
-    // MARK: - System Overview Mode
-
     private var systemOverview: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                LazyVGrid(columns: [
-                    GridItem(.adaptive(minimum: 200, maximum: 300))
-                ], spacing: 16) {
-                    ForEach(0..<(appState.selectedSystemIndex != nil ? appState.galaxy[appState.selectedSystemIndex!].planets.count : 0), id: \.self) { i in
-                        let planet = appState.galaxy[appState.selectedSystemIndex!].planets[i]
-                        Button(action: {
-                            appState.selectPlanet(i)
-                        }) {
-                            PlanetCardView(planet: planet, index: i)
-                        }
-                        .buttonStyle(.plain)
+        ScrollView {
+            LazyVGrid(columns: [
+                GridItem(.adaptive(minimum: 200, maximum: 300))
+            ], spacing: 16) {
+                ForEach(0..<appState.galaxy[appState.selectedSystemIndex!].planets.count, id: \.self) { i in
+                    let planet = appState.galaxy[appState.selectedSystemIndex!].planets[i]
+                    Button(action: {
+                        appState.selectPlanet(i)
+                    }) {
+                        PlanetCardView(planet: planet, index: i)
                     }
+                    .buttonStyle(.plain)
                 }
-                .padding()
             }
+            .padding()
         }
-    }
-
-    private func toggleSidebar() {
-        NSApp.keyWindow?.firstResponder?.tryToPerform(#selector(NSSplitViewController.toggleSidebar(_:)), with: nil)
     }
 }
 
@@ -377,7 +355,6 @@ struct PlanetCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Planet preview
             ZStack {
                 Circle()
                     .fill(Color(
