@@ -58,7 +58,7 @@ struct GalaxyMapView: View {
 
                     // Systems positioned by golden-angle spiral
                     ForEach(0..<systems.count, id: \.self) { i in
-                        let pos = systemPosition(i, center: center, size: size)
+                        let pos = systemPosition(i, center: center, minSize: size)
                         let isSelected = (selectedSystem == i)
                         let system = systems[i]
 
@@ -131,9 +131,9 @@ struct GalaxyMapView: View {
         .background(Color.black)
     }
 
-    private func systemPosition(_ i: Int, center: CGPoint, size: CGSize) -> CGPoint {
+    private func systemPosition(_ i: Int, center: CGPoint, minSize: CGFloat) -> CGPoint {
         let angle = Double(i) * 2.399963  // golden angle
-        let radius = CGFloat(i) * size * 0.025 + size * 0.08
+        let radius = CGFloat(i) * minSize * 0.025 + minSize * 0.08
         return CGPoint(
             x: center.x + cos(angle) * radius,
             y: center.y + sin(angle) * radius
