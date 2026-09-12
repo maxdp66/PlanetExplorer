@@ -1,9 +1,10 @@
 import SwiftUI
+import Combine
 
 /// Radial map of a single star system, inspired by vintage Solar System infographics.
-/// Star at center, planets orbiting on concentric rings withhabitable zone band.
 struct SystemMapView: View {
     let system: StarSystem
+    @ObservedObject private var hoverState = HoverState()
 
     var body: some View {
         GeometryReader { geo in
@@ -12,10 +13,9 @@ struct SystemMapView: View {
 
             ScrollView([.horizontal, .vertical]) {
                 ZStack {
-                    // Deep space background
                     Color.black
 
-                    // Subtle starfield
+                    // Starfield
                     ForEach(0..<150, id: \.self) { _ in
                         Circle()
                             .fill(Color.white.opacity(Double.random(in: 0.03...0.2)))
@@ -26,7 +26,7 @@ struct SystemMapView: View {
                             )
                     }
 
-                    // Habitable zone band (green, Earth-like region)
+                    // Habitable zone band
                     Circle()
                         .stroke(Color.green.opacity(0.15), lineWidth: 30)
                         .frame(width: maxRadius * 0.7 * 2, height: maxRadius * 0.7 * 2)
@@ -56,7 +56,6 @@ struct SystemMapView: View {
 
                     // Central star
                     ZStack {
-                        // Outer glow
                         Circle()
                             .fill(RadialGradient(
                                 colors: [
@@ -69,7 +68,6 @@ struct SystemMapView: View {
                             ))
                             .frame(width: 100, height: 100)
 
-                        // Star sphere
                         Circle()
                             .fill(RadialGradient(
                                 colors: [
@@ -107,7 +105,7 @@ struct SystemMapView: View {
                     ForEach(0..<system.planets.count, id: \.self) { i in
                         let planet = system.planets[i]
                         let orbitRadius = orbitRadius(for: i, maxRadius: maxRadius)
-                        let angle = Double(i) * 0.8  // spread planets around the orbit
+                        let angle = Double(i) * 0.8
                         let pos = CGPoint(
                             x: center.x + cos(angle) * orbitRadius,
                             y: center.y + sin(angle) * orbitRadius
@@ -115,10 +113,13 @@ struct SystemMapView: View {
 
                         PlanetOrbitalView(
                             planet: planet,
-                            index: i,
-                            orbitRadius: orbitRadius,
-                            center: center,
-                            position: pos
+                            position: pos,
+                            isHovered: Binding(
+                                get: { hoverState.hoveredIndex == i },
+                                set: { _ in
+                                    hoverState.hoveredIndex = hoverState.hoveredIndex == i ? nil : i
+                                }
+                            )
                         )
                     }
 
@@ -143,25 +144,23 @@ struct SystemMapView: View {
     }
 
     private func orbitRadius(for index: Int, maxRadius: CGFloat) -> CGFloat {
-        // Distribute orbits evenly from inner to outer
         let fraction = CGFloat(index + 1) / CGFloat(system.planets.count + 1)
         return maxRadius * fraction
     }
 }
 
-/// A single planet shown on its orbital ring with label and info badge.
+/// Tracks which planet is currently hovered, without @State macros.
+final class HoverState: ObservableObject {
+    @Published var hoveredIndex: Int? = nil
+}
+
 struct PlanetOrbitalView: View {
     let planet: Planet
-    let index: Int
-    let orbitRadius: CGFloat
-    let center: CGPoint
     let position: CGPoint
-
-    @State private var isHovered = false
+    @Binding var isHovered: Bool
 
     var body: some View {
         ZStack {
-            // Planet dot
             Circle()
                 .fill(Color(
                     red: Double(planet.type.color.r),
@@ -177,13 +176,11 @@ struct PlanetOrbitalView: View {
                 .scaleEffect(isHovered ? 1.3 : 1.0)
                 .animation(.easeInOut(duration: 0.2), value: isHovered)
 
-            // Planet name label
             Text(planet.name)
                 .font(.system(size: 7, weight: .medium, design: .serif))
                 .foregroundColor(.white.opacity(isHovered ? 1.0 : 0.6))
                 .position(x: position.x, y: position.y + planetSize / 2 + 10)
 
-            // Hover tooltip
             if isHovered {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(planet.type.name)
@@ -230,7 +227,6 @@ struct PlanetOrbitalView: View {
     }
 
     private var planetSize: CGFloat {
-        // Scale dot size by planet radius (logarithmic-ish)
         let base: CGFloat = 6
         let scale = CGFloat(log10(planet.radiusKm / 1000.0 + 1)) * 3
         return base + scale

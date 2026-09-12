@@ -1,14 +1,22 @@
 import SwiftUI
 import Combine
 
-// MARK: - Main App Entry Point
-
 @main
 struct PlanetExplorerApp: App {
+    init() {
+        // Steal focus from terminal immediately
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .preferredColorScheme(.dark)
+        }
+        .commands {
+            // Hide default menu bar items we don't use
+            CommandGroup(replacing: .newItem) {}
         }
     }
 }
@@ -134,27 +142,33 @@ struct ContentView: View {
                     .padding()
             }
 
-            List {
-                ForEach(0..<appState.galaxy.count, id: \.self) { i in
-                    let system = appState.galaxy[i]
-                    Button(action: {
-                        appState.selectSystem(i)
-                    }) {
-                        SystemRowView(
-                            system: system,
-                            isSelected: appState.selectedSystemIndex == i
-                        )
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(0..<appState.galaxy.count, id: \.self) { i in
+                        let system = appState.galaxy[i]
+                        Button(action: {
+                            appState.selectSystem(i)
+                        }) {
+                            SystemRowView(
+                                system: system,
+                                isSelected: appState.selectedSystemIndex == i
+                            )
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                appState.selectedSystemIndex == i
+                                    ? Color.accentColor.opacity(0.3)
+                                    : Color.clear
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .contentShape(Rectangle())
+
+                        Divider().background(Color.white.opacity(0.05))
                     }
-                    .buttonStyle(.plain)
-                    .listRowBackground(
-                        appState.selectedSystemIndex == i
-                            ? Color.accentColor.opacity(0.2)
-                            : Color.clear
-                    )
                 }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
             .background(Color.black)
         }
     }
