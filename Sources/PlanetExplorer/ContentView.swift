@@ -1,26 +1,6 @@
 import SwiftUI
 import Combine
 
-@main
-struct PlanetExplorerApp: App {
-    init() {
-        // Steal focus from terminal immediately
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
-    }
-
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .preferredColorScheme(.dark)
-        }
-        .commands {
-            // Hide default menu bar items we don't use
-            CommandGroup(replacing: .newItem) {}
-        }
-    }
-}
-
 // MARK: - App State
 
 final class AppState: ObservableObject {
