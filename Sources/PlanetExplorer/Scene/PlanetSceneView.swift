@@ -144,15 +144,26 @@ class PlanetScene: SCNView {
         planetSCN.geometry?.materials = [material]
         planetSCN.position = SCNVector3(0, 0, 0)
 
-        // Slow rotation
-        let rotate = SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: 20)
+        // Procedural rotation period based on planet type
+        // Gas giants rotate faster (10-20h), terrestrial slower (24-1000h)
+        let rotationHours: Double
+        switch planet.type {
+        case .gasGiant: rotationHours = Double.random(in: 10...20)
+        case .hotJupiter: rotationHours = Double.random(in: 15...30)
+        case .iceGiant: rotationHours = Double.random(in: 15...25)
+        case .terrestrial: rotationHours = Double.random(in: 20...100)
+        case .superEarth: rotationHours = Double.random(in: 15...50)
+        }
+        let rotationDuration = rotationHours * 0.5  // scale: 1 hour = 0.5 seconds
+
+        let rotate = SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: rotationDuration)
         let repeatRotate = SCNAction.repeatForever(rotate)
         planetSCN.runAction(repeatRotate)
 
         scene?.rootNode.addChildNode(planetSCN)
         planetNode = planetSCN
 
-        // Create moons
+        // Create moons with physics-based orbital periods
         let moonsSCN = SCNNode()
         for (i, moon) in planet.moons.enumerated() {
             let moonNode = SCNNode()
@@ -166,14 +177,21 @@ class PlanetScene: SCNView {
             moonMat.diffuse.contents = NSColor(red: CGFloat(mc.r), green: CGFloat(mc.g), blue: CGFloat(mc.b), alpha: CGFloat(mc.a))
             moonNode.geometry?.materials = [moonMat]
 
-            // Orbit the moon around the planet
-            let orbitRadius = Float(3.0 + Double(i) * 2.0)
+            // Use the moon's actual orbital period from generation
+            let orbitalPeriodDays = moon.orbit.periodDays
+            
+            // Scale period for visualization: 1 day = 0.5 seconds, clamped for visibility
+            let vizDuration = max(min(orbitalPeriodDays * 0.5, 30.0), 2.0)
+
+            // Orbit radius: scale with moon's actual distance (log scale for visibility)
+            let orbitRadius = Float(2.0 + log10(moon.orbit.semiMajorAxisAU / 1000.0 + 1) * 2.5)
+
             let orbitNode = SCNNode()
             orbitNode.position = SCNVector3(0, 0, 0)
             moonNode.position = SCNVector3(orbitRadius, 0, 0)
             orbitNode.addChildNode(moonNode)
 
-            let orbitRotate = SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: Double(5 + i * 3))
+            let orbitRotate = SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: Double(vizDuration))
             let repeatOrbit = SCNAction.repeatForever(orbitRotate)
             orbitNode.runAction(repeatOrbit)
 
