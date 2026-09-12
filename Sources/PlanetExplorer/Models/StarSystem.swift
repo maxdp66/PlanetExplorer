@@ -57,19 +57,20 @@ enum StarType: Int, CaseIterable {
     }
 
     /// Realistic radius in km (for rendering the star dot).
+    /// Based on Morgan-Keenan classification (1 R_sun = 696,340 km).
     var radiusKm: Double {
         switch self {
-        case .oType: return 1_500_000
-        case .bType: return 700_000
-        case .aType: return 250_000
-        case .fType: return 180_000
-        case .gType: return 140_000  // Sun-like
-        case .kType: return 100_000
-        case .mType: return 50_000
-        case .lType: return 30_000
-        case .wolfRayet: return 1_200_000
-        case .carbon: return 80_000
-        case .whiteDwarf: return 8_000  // Earth-sized remnant
+        case .oType: return 12_000_000   // ~17 R_sun (blue supergiant)
+        case .bType: return 5_000_000     // ~7 R_sun
+        case .aType: return 2_000_000     // ~3 R_sun
+        case .fType: return 1_200_000     // ~1.7 R_sun
+        case .gType: return 700_000       // ~1 R_sun (Sun = 696,340 km)
+        case .kType: return 500_000       // ~0.7 R_sun
+        case .mType: return 300_000       // ~0.4 R_sun (red dwarf)
+        case .lType: return 100_000       // brown dwarf
+        case .wolfRayet: return 8_000_000 // ~11 R_sun
+        case .carbon: return 1_000_000    // ~1.4 R_sun
+        case .whiteDwarf: return 10_000   // Earth-sized remnant
         }
     }
 
