@@ -23,7 +23,8 @@ final class AppState: ObservableObject {
     @Published var seed: String = "default"
     @Published var isGenerating = false
 
-    // View-local state moved here to avoid @State (SwiftUIMacros)
+    // View-local state exposed as @Published on the ObservableObject
+    // instead of @State (which requires SwiftUIMacros, unavailable to swift run)
     @Published var seedInput: String = "default"
     @Published var systemCount: Int = 25
     @Published var planetsPerSystem: Int = 5

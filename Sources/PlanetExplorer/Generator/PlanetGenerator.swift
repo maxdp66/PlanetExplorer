@@ -41,7 +41,7 @@ struct PlanetGenerator {
         }
 
         mutating func nextFloat() -> Float {
-            UInt32(truncatingIfNeeded: next() >> 32) / Float(UInt32.max)
+            Float(UInt32(truncatingIfNeeded: next() >> 32)) / Float(UInt32.max)
         }
 
         mutating func genRange(_ range: ClosedRange<Double>) -> Double {
