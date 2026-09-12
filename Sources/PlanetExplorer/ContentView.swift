@@ -172,6 +172,12 @@ struct ContentView: View {
                         }
 
                         Button(appState.showSystemMap ? "Planet List" : "System Map") {
+                            // If viewing a planet, go back to system grid first
+                            if appState.selectedPlanetIndex != nil {
+                                appState.selectedPlanetIndex = nil
+                                appState.currentPlanet = nil
+                                return
+                            }
                             appState.showSystemMap.toggle()
                         }
                         .buttonStyle(.bordered)
