@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - Galaxy Map View (2D overview of all systems)
+// MARK: - Galaxy Map View (2D radial overview of all systems)
 
 struct GalaxyMapView: View {
     let systems: [StarSystem]
@@ -8,89 +8,136 @@ struct GalaxyMapView: View {
     let onSelect: (Int) -> Void
 
     var body: some View {
-        ScrollView([.horizontal, .vertical]) {
-            ZStack {
-                // Background
-                Color.black
+        GeometryReader { geo in
+            let size = min(geo.size.width, geo.size.height)
+            let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
 
-                // Galaxy background gradient
-                RadialGradient(
-                    colors: [
-                        Color.purple.opacity(0.15),
-                        Color.black
-                    ],
-                    center: .center,
-                    startRadius: 100,
-                    endRadius: 800
-                )
+            ScrollView([.horizontal, .vertical]) {
+                ZStack {
+                    // Deep space background
+                    Color.black
 
-                // Connection lines between nearby systems
-                ForEach(0..<systems.count, id: \.self) { i in
-                    if i > 0 {
-                        Path { path in
-                            let p1 = systemPosition(i - 1)
-                            let p2 = systemPosition(i)
-                            path.move(to: p1)
-                            path.addLine(to: p2)
-                        }
-                        .stroke(Color.gray.opacity(0.15), lineWidth: 0.5)
+                    // Subtle starfield noise
+                    ForEach(0..<200, id: \.self) { _ in
+                        Circle()
+                            .fill(Color.white.opacity(Double.random(in: 0.05...0.3)))
+                            .frame(width: CGFloat.random(in: 0.5...1.5))
+                            .position(
+                                x: CGFloat.random(in: 0...max(geo.size.width, 2000)),
+                                y: CGFloat.random(in: 0...max(geo.size.height, 2000))
+                            )
                     }
-                }
 
-                // System dots
-                ForEach(0..<systems.count, id: \.self) { i in
-                    let pos = systemPosition(i)
-                    let isSelected = (selectedSystem == i)
+                    // Radial grid — concentric orbital rings
+                    ForEach(1..<6) { ring in
+                        let r = CGFloat(ring) * size * 0.15
+                        Circle()
+                            .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+                            .frame(width: r * 2, height: r * 2)
+                            .position(center)
+                    }
 
-                    Button(action: {
-                        selectedSystem = i
-                        onSelect(i)
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(systemColor(i))
-                                .frame(width: isSelected ? 16 : 10, height: isSelected ? 16 : 10)
+                    // Radial axis lines (spokes)
+                    ForEach(0..<12) { spoke in
+                        let angle = Double(spoke) * (.pi / 6)
+                        Path { path in
+                            path.move(to: center)
+                            path.addLine(to: CGPoint(
+                                x: center.x + cos(angle) * size * 0.9,
+                                y: center.y + sin(angle) * size * 0.9
+                            ))
+                        }
+                        .stroke(Color.white.opacity(0.03), lineWidth: 0.5)
+                    }
 
-                            if isSelected {
+                    // Habitable zone band (green ring)
+                    Circle()
+                        .stroke(Color.green.opacity(0.2), lineWidth: 1.5)
+                        .frame(width: size * 0.45 * 2, height: size * 0.45 * 2)
+                        .position(center)
+
+                    // Systems positioned by golden-angle spiral
+                    ForEach(0..<systems.count, id: \.self) { i in
+                        let pos = systemPosition(i, center: center, size: size)
+                        let isSelected = (selectedSystem == i)
+                        let system = systems[i]
+
+                        Button(action: {
+                            selectedSystem = i
+                            onSelect(i)
+                        }) {
+                            ZStack {
+                                // Selection ring
+                                if isSelected {
+                                    Circle()
+                                        .stroke(Color.white, lineWidth: 2)
+                                        .frame(width: 28, height: 28)
+                                        .position(pos)
+                                }
+
+                                // Star dot
                                 Circle()
-                                    .stroke(Color.white, lineWidth: 2)
-                                    .frame(width: 22, height: 22)
+                                    .fill(Color(
+                                        red: Double(system.starColor.r),
+                                        green: Double(system.starColor.g),
+                                        blue: Double(system.starColor.b)
+                                    ))
+                                    .frame(width: isSelected ? 14 : 10, height: isSelected ? 14 : 10)
+                                    .position(pos)
+                                    .shadow(color: Color(
+                                        red: Double(system.starColor.r),
+                                        green: Double(system.starColor.g),
+                                        blue: Double(system.starColor.b)
+                                    ), radius: isSelected ? 6 : 2)
+
+                                // System name label
+                                Text(system.name)
+                                    .font(.system(size: 7, weight: isSelected ? .semibold : .regular, design: .serif))
+                                    .foregroundColor(isSelected ? .white : Color.white.opacity(0.5))
+                                    .position(x: pos.x, y: pos.y + 16)
                             }
                         }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
-                    .position(pos)
-                    .overlay(
-                        Text(systems[i].name)
-                            .font(.system(size: 8))
-                            .foregroundColor(isSelected ? .white : .gray)
-                            .offset(y: 14)
-                            .position(pos)
-                    )
+
+                    // Center marker
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.08))
+                            .frame(width: 20, height: 20)
+                        Circle()
+                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                            .frame(width: 20, height: 20)
+                    }
+                    .position(center)
+
+                    // Scale marker (dashed red line across bottom)
+                    Path { path in
+                        let y = center.y + size * 0.7
+                        path.move(to: CGPoint(x: center.x - size * 0.3, y: y))
+                        path.addLine(to: CGPoint(x: center.x + size * 0.3, y: y))
+                    }
+                    .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                    .foregroundColor(.red.opacity(0.4))
+
+                    Text("~50,000 ly")
+                        .font(.system(size: 8, design: .serif))
+                        .foregroundColor(.red.opacity(0.6))
+                        .position(x: center.x, y: center.y + size * 0.73)
                 }
+                .frame(width: max(geo.size.width, 2000), height: max(geo.size.height, 2000))
             }
-            .frame(width: 2000, height: 2000)
         }
         .background(Color.black)
     }
 
-    private func systemPosition(_ i: Int) -> CGPoint {
+    private func systemPosition(_ i: Int, center: CGPoint, size: CGSize) -> CGPoint {
         let angle = Double(i) * 2.399963  // golden angle
-        let radius = Double(i) * 120.0 + 100.0
-        let x = 1000.0 + cos(angle) * radius
-        let y = 1000.0 + sin(angle) * radius
-        return CGPoint(x: x, y: y)
-    }
-
-    private func systemColor(_ i: Int) -> Color {
-        let planets = systems[i].planets
-        if planets.contains(where: { $0.hasFlora || $0.hasFauna }) {
-            return .green
-        }
-        if planets.contains(where: { $0.type == .terrestrial || $0.type == .superEarth }) {
-            return .blue
-        }
-        return .orange
+        let radius = CGFloat(i) * size * 0.025 + size * 0.08
+        return CGPoint(
+            x: center.x + cos(angle) * radius,
+            y: center.y + sin(angle) * radius
+        )
     }
 }
 
@@ -103,7 +150,6 @@ struct PlanetInfoView: View {
         if let planet = planet {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    // Header
                     VStack(alignment: .leading, spacing: 4) {
                         Text(planet.name)
                             .font(.title2)
@@ -117,7 +163,6 @@ struct PlanetInfoView: View {
 
                     Divider().background(Color.gray)
 
-                    // Stats
                     Group {
                         InfoRow(label: "Radius", value: planet.formattedRadius)
                         InfoRow(label: "Moons", value: planet.moonCount)
@@ -143,7 +188,6 @@ struct PlanetInfoView: View {
 
                     Divider().background(Color.gray)
 
-                    // Moons list
                     if !planet.moons.isEmpty {
                         Text("Moons (\(planet.moons.count))")
                             .font(.headline)

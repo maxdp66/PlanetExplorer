@@ -281,22 +281,7 @@ struct ContentView: View {
     }
 
     private var systemOverview: some View {
-        ScrollView {
-            LazyVGrid(columns: [
-                GridItem(.adaptive(minimum: 200, maximum: 300))
-            ], spacing: 16) {
-                ForEach(0..<appState.galaxy[appState.selectedSystemIndex!].planets.count, id: \.self) { i in
-                    let planet = appState.galaxy[appState.selectedSystemIndex!].planets[i]
-                    Button(action: {
-                        appState.selectPlanet(i)
-                    }) {
-                        PlanetCardView(planet: planet, index: i)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding()
-        }
+        SystemMapView(system: appState.galaxy[appState.selectedSystemIndex!])
     }
 }
 
