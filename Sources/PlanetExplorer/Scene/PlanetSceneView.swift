@@ -183,9 +183,10 @@ class PlanetScene: SCNView {
             // Use the moon's actual orbital period from generation
             let orbitalPeriodDays = moon.orbit.periodDays
             
-            // Arcade mode: speed up 10x for visual effect
-            let timeScale: Double = arcadeMode ? 0.05 : 0.5
-            let vizDuration = max(min(orbitalPeriodDays * timeScale, 30.0), 2.0)
+            // Scale period for visualization: logarithmic scale to show differences
+            // Closer moons orbit much faster than distant ones
+            let logPeriod = log10(orbitalPeriodDays + 1)
+            let vizDuration = max(logPeriod * 3.0, 1.0)
 
             // Orbit radius: scale with moon's actual distance (log scale for visibility)
             let orbitRadius = Float(2.0 + log10(moon.orbit.semiMajorAxisAU / 1000.0 + 1) * 2.5)

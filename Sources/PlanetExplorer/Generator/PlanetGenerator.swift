@@ -261,7 +261,11 @@ struct PlanetGenerator {
 
             guard minOrbitKm < maxOrbitKm else { continue }
 
-            let moonOrbitKm = rng.genRange(minOrbitKm...max(minOrbitKm + 1000, maxOrbitKm))
+            // Choose orbit from a wider range to prevent clumping
+            // Use exponential spacing for more realistic distribution
+            let rangeMin = minOrbitKm
+            let rangeMax = max(minOrbitKm * 1.5, maxOrbitKm)
+            let moonOrbitKm = rng.genRange(rangeMin...rangeMax)
             lastMoonOrbitKm = moonOrbitKm
 
             // Kepler's 3rd law: T = 2π√(a³/μ) where μ = G × M_planet
